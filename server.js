@@ -30,13 +30,19 @@ async function run() {
       app.post('/saveUserProfile', async (req, res) => {
          const userProfile = req.body;
 
-         const result = await solrufUsersCollection.updateOne(
-            { email: userProfile.email },
-            { $set: userProfile },
-            { upsert: true }
-         );
+         const response = await solrufUsersCollection.findOne({
+            email: userProfile.email,
+         });
 
-         res.json(result);
+         if (response.email === userProfile.email) {
+            res.json({ message: 'User already exists' });
+         } else {
+            const result = await solrufUsersCollection.insertOne({
+               $set: userProfile,
+            });
+
+            res.json(result);
+         }
       });
 
       //* getting user profile from database
@@ -49,9 +55,6 @@ async function run() {
 
       //* updating a user profile
       app.put('/updateProfile', async (req, res) => {
-         console.log(req.body);
-         console.log(req.files);
-
          const image = req.files.image;
          const imageData = image?.data;
          const encodedImage = imageData.toString('base64');
